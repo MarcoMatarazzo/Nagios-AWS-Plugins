@@ -1,18 +1,18 @@
 #!/usr/bin/ruby
-#--
-# Nagios API Ruby library
-#
-# Ruby Gem Name::  secludit-nagios
-# Author:: $Author: fred $ 
-# Copyright:: Copyright 2016 SecludIT 
-# License::   Distributes under the same terms as Ruby
-# Home:: $Id: check_cloudwatch_status.rb 42 2010-06-17 15:26:12Z fred $
-#++
 
-%w[ getoptlong rubygems fog pp base64 openssl ].each { |f| require f }
+# Based on SecludIT gem secludit-nagios
+
+require 'getoptlong'
+require 'rubygems'
+require 'fog'
+require 'pp'
+require 'base64'
+require 'openssl'
+require 'yaml'
+
+# sudo apt-get install ruby-dev libxml2-dev build-essential libcurl4-openssl-dev
 
 #puts AWS::Cloudwatch::API_VERSION
-
 
 # define static values
 EC2_STATUS_CODE_PENDING = 0
@@ -159,13 +159,13 @@ opts.set_options(
         [ "--address", "-a", GetoptLong::OPTIONAL_ARGUMENT ], \
         [ "--instance_id", "-i", GetoptLong::OPTIONAL_ARGUMENT ], \
         [ "--credential_file", "-f", GetoptLong::OPTIONAL_ARGUMENT ], \
-	[ "--ec2-metric", "-C", GetoptLong::OPTIONAL_ARGUMENT], \
-	[ "--elb-metric", "-L", GetoptLong::OPTIONAL_ARGUMENT], \
-	[ "--rds-metric", "-D", GetoptLong::OPTIONAL_ARGUMENT], \
-	[ "--elasticache-metric", "-M", GetoptLong::OPTIONAL_ARGUMENT], \
-	[ "--stat", "-S", GetoptLong::OPTIONAL_ARGUMENT], \
-	[ "--warning", "-w", GetoptLong::OPTIONAL_ARGUMENT], \
-	[ "--critical", "-c", GetoptLong::OPTIONAL_ARGUMENT] )
+	      [ "--ec2-metric", "-C", GetoptLong::OPTIONAL_ARGUMENT], \
+	      [ "--elb-metric", "-L", GetoptLong::OPTIONAL_ARGUMENT], \
+	      [ "--rds-metric", "-D", GetoptLong::OPTIONAL_ARGUMENT], \
+	      [ "--elasticache-metric", "-M", GetoptLong::OPTIONAL_ARGUMENT], \
+	      [ "--stat", "-S", GetoptLong::OPTIONAL_ARGUMENT], \
+	      [ "--warning", "-w", GetoptLong::OPTIONAL_ARGUMENT], \
+	      [ "--critical", "-c", GetoptLong::OPTIONAL_ARGUMENT] )
 
 # test usage
 unless ARGV.length >= 5
@@ -182,112 +182,13 @@ opts.each { |opt, arg|
       verbose = 1
     when '--address'
       address = arg
-      case address
-        when /us-east-1/
-          ec2_endpoint = "ec2.us-east-1.amazonaws.com"
-          rds_endpoint = "rds.us-east-1.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.us-east-1.amazonaws.com"
-          elasticache_endpoint = "elasticache.us-east-1.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.us-east-1.amazonaws.com"
-          region = "us-east-1"
-        when /us-east-2/
-          ec2_endpoint = "ec2.us-east-2.amazonaws.com"
-          rds_endpoint = "rds.us-east-2.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.us-east-2.amazonaws.com"
-          elasticache_endpoint = "elasticache.us-east-2.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.us-east-2.amazonaws.com"
-          region = "us-east-2"
-        when /us-west-1/
-          ec2_endpoint = "ec2.us-west-1.amazonaws.com"
-          rds_endpoint = "rds.us-west-1.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.us-west-1.amazonaws.com"
-          elasticache_endpoint = "elasticache.us-west-1.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.us-west-1.amazonaws.com"
-          region = "us-west-1"
-        when /us-west-2/
-          ec2_endpoint = "ec2.us-west-2.amazonaws.com"
-          rds_endpoint = "rds.us-west-2.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.us-west-2.amazonaws.com"
-          elasticache_endpoint = "elasticache.us-west-2.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.us-west-2.amazonaws.com"
-          region = "us-west-2"  
-        when /ca-central-1/
-          ec2_endpoint = "ec2.ca-central-1.amazonaws.com"
-          rds_endpoint = "rds.ca-central-1.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.ca-central-1.amazonaws.com"
-          elasticache_endpoint = "elasticache.ca-central-1.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.ca-central-1.amazonaws.com"
-          region = "ca-central-1"  
-        when /eu-west-1/
-          ec2_endpoint = "ec2.eu-west-1.amazonaws.com"
-          rds_endpoint = "rds.eu-west-1.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.eu-west-1.amazonaws.com"
-          elasticache_endpoint = "elasticache.eu-west-1.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.eu-west-1.amazonaws.com"
-          region = "eu-west-1"
-        when /eu-west-2/
-          ec2_endpoint = "ec2.eu-west-2.amazonaws.com"
-          rds_endpoint = "rds.eu-west-2.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.eu-west-2.amazonaws.com"
-          elasticache_endpoint = "elasticache.eu-west-2.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.eu-west-2.amazonaws.com"
-          region = "eu-west-2"
-        when /eu-central-1/
-          ec2_endpoint = "ec2.eu-central-1.amazonaws.com"
-          rds_endpoint = "rds.eu-central-1.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.eu-central-1.amazonaws.com"
-          elasticache_endpoint = "elasticache.eu-central-1.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.eu-central-1.amazonaws.com"
-          region = "eu-central-1"
-        when /ap-northeast-1/
-          ec2_endpoint = "ec2.ap-northeast-1.amazonaws.com"
-          rds_endpoint = "rds.ap-northeast-1.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.ap-northeast-1.amazonaws.com"
-          elasticache_endpoint = "elasticache.ap-northeast-1.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.ap-northeast-1.amazonaws.com"
-          region = "ap-northeast-1"
-        when /ap-northeast-2/
-          ec2_endpoint = "ec2.ap-northeast-2.amazonaws.com"
-          rds_endpoint = "rds.ap-northeast-2.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.ap-northeast-2.amazonaws.com"
-          elasticache_endpoint = "elasticache.ap-northeast-2.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.ap-northeast-2.amazonaws.com"
-          region = "ap-northeast-2"
-        when /ap-southeast-1/
-          ec2_endpoint = "ec2.ap-southeast-1.amazonaws.com"
-          rds_endpoint = "rds.ap-southeast-1.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.ap-southeast-1.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.ap-southeast-1.amazonaws.com"
-          region = "ap-southeast-1"
-        when /ap-southeast-2/
-          ec2_endpoint = "ec2.ap-southeast-2.amazonaws.com"
-          rds_endpoint = "rds.ap-southeast-2.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.ap-southeast-2.amazonaws.com"
-          elasticache_endpoint = "elasticache.ap-southeast-2.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.ap-southeast-2.amazonaws.com"
-          region = "ap-southeast-2"
-        when /ap-south-1/
-          ec2_endpoint = "ec2.ap-south-1.amazonaws.com"
-          rds_endpoint = "rds.ap-south-1.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.ap-south-1.amazonaws.com"
-          elasticache_endpoint = "elasticache.ap-south-1.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.ap-south-1.amazonaws.com"
-          region = "ap-south-1"
-        when /sa-east-1/
-          ec2_endpoint = "ec2.sa-east-1.amazonaws.com"
-          rds_endpoint = "rds.sa-east-1.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.sa-east-1.amazonaws.com"
-          elasticache_endpoint = "elasticache.sa-east-1.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.sa-east-1.amazonaws.com"
-          region = "sa-east-1"
-        else
-          ec2_endpoint = "ec2.us-east-1.amazonaws.com"
-          rds_endpoint = "rds.us-east-1.amazonaws.com"
-          elb_endpoint = "elasticloadbalancing.us-east-1.amazonaws.com"
-          elasticache_endpoint = "elasticache.us-east-1.amazonaws.com"
-          cloudwatch_endpoint = "monitoring.amazonaws.com"
-          region = "us-east-1"
-      end 
+      # TODO default: us-east-1
+      ec2_endpoint = "ec2.#{address}.amazonaws.com"
+      rds_endpoint = "rds.#{address}.amazonaws.com"
+      elb_endpoint = "elasticloadbalancing.#{address}.amazonaws.com"
+      elasticache_endpoint = "elasticache.#{address}.amazonaws.com"
+      cloudwatch_endpoint = "monitoring.#{address}.amazonaws.com"
+      region = "#{address}"
     when '--instance_id'
       instance_id = arg
     when '--credential_file'
@@ -334,29 +235,10 @@ elsif namespace.eql?(AWS_NAMESPACE_ELASTICACHE)
 end
 
 begin
-  content = File.read(credential_file)
-  key_file = "/etc/cloutomate/cloutomate.pem" #TODO: make configurable?
-  encrypted_access_key_id = content.match(/^\s*ec2_access_id.*ec2_access_key/m).to_s.gsub("ec2_access_id","").gsub("ec2_access_key","").strip
-  encrypted_secret_access_key = content.match(/^\s*ec2_access_key.*/m).to_s.gsub("ec2_access_key","").strip
-
-  if use_rsa
-    decrypt_key = OpenSSL::PKey::RSA.new(File.read(key_file))
-  
-    access_key_id = decrypt_key.private_decrypt(Base64.decode64(encrypted_access_key_id))
-    secret_access_key = decrypt_key.private_decrypt(Base64.decode64(encrypted_secret_access_key))
-  else
-    cipher = OpenSSL::Cipher::Cipher.new('bf-cbc')
-
-    cipher.decrypt
-    cipher.key = Digest::SHA256.digest(File.read(key_file))
-    access_key_id = cipher.update(Base64.decode64(encrypted_access_key_id))
-    access_key_id << cipher.final
-
-    cipher.decrypt
-    cipher.key = Digest::SHA256.digest(File.read(key_file))
-    secret_access_key = cipher.update(Base64.decode64(encrypted_secret_access_key))
-    secret_access_key << cipher.final
-  end
+  ### TODO: re-add symmetric encryption using ED25519 key later
+  conf = YAML.load_file(credential_file)
+  access_key_id = conf.ec2_access_key
+  secret_access_key = conf.ec2_secret 
 rescue Exception => e
   puts "Error occured while retrieving and decrypting credentials for instance #{instance_id} on Amazon Server: #{address}: #{e}"
   exit NAGIOS_CODE_CRITICAL
